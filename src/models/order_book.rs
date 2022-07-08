@@ -15,7 +15,7 @@ impl BookSide {
         }
     }
 
-    fn try_insert(&mut self, order: Order) {
+    fn insert(&mut self, order: Order) {
         self.orders.push(order);
     }
 }
@@ -65,7 +65,7 @@ impl OrderBook {
         if !self.active.insert(order.order_id) {
             bail!("Order with OrderId {} is already present!", order.order_id);
         }
-        self.asks.try_insert(order);
+        self.asks.insert(order);
         Ok(())
     }
 
@@ -73,7 +73,7 @@ impl OrderBook {
         if !self.active.insert(order.order_id) {
             bail!("Order with OrderId {} is already present!", order.order_id);
         }
-        self.bids.try_insert(order);
+        self.bids.insert(order);
         Ok(())
     }
 }
