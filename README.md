@@ -1,2 +1,2 @@
-# orderbook-rs
-An orderbook library
+# Orderbook-rs
+A blazingly fast orderbook library written in Rust
