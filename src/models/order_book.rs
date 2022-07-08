@@ -3,6 +3,7 @@ use anyhow::{bail, Result};
 use std::collections::{BinaryHeap, HashSet};
 
 #[derive(Debug)]
+/// [`BookSide`] holds the orders for one side of the `OrderBook`
 pub struct BookSide {
     pub orders: BinaryHeap<Order>,
 }
@@ -27,6 +28,9 @@ impl Default for BookSide {
 }
 
 #[derive(Debug)]
+/// [`OrderBook`] struct holds 2 sides: `asks` and `bids`, which are both [`BookSide`]'s
+/// The member named `active` is the source of truth for the `OrderId`'s. If the `OrderId` is not in
+/// the `HashSet`, it does not exist.
 pub struct OrderBook {
     pub asks: BookSide,
     pub bids: BookSide,
@@ -43,6 +47,7 @@ impl OrderBook {
         }
     }
 
+    /// Attempt to insert an order into the book
     /// # Errors
     /// Returns [`Err`] if the `OrderId` is already present
     pub fn try_insert(&mut self, order: Order) -> Result<()> {
@@ -52,6 +57,7 @@ impl OrderBook {
         }
     }
 
+    /// Attempt to remove an order from the book
     /// # Errors
     /// Returns [`Err`] if the `OrderId` is not present
     pub fn try_remove(&mut self, order_id: OrderId) -> Result<()> {
