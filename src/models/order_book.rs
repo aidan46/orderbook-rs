@@ -90,7 +90,35 @@ mod test {
     use crate::models::{order::Order, Side};
 
     #[test]
-    fn show_order_book() {
+    fn insert_order() {
+        // Setup
+        let mut ob = OrderBook::default();
+        let o1 = Order::default();
+
+        // Act + assert
+        assert!(ob.try_insert(o1).is_ok());
+    }
+
+    #[test]
+    fn delete_order() {
+        // Setup
+        let mut ob = OrderBook::default();
+        let order_id = 1;
+        let o1 = Order {
+            order_id,
+            ..Order::default()
+        };
+
+        assert!(ob.try_insert(o1).is_ok());
+
+        // Act + assert
+        assert!(ob.try_remove(order_id).is_ok());
+        assert!(ob.try_remove(order_id).is_err());
+    }
+
+    #[test]
+    fn duplicate_order_id() {
+        // Setup
         let mut ob = OrderBook::default();
         let o1 = Order {
             order_id: 1,
@@ -99,14 +127,14 @@ mod test {
             ..Order::default()
         };
         let o2 = Order {
-            order_id: 2,
+            order_id: 1,
             price: 69,
             side: Side::Bid,
             ..Order::default()
         };
 
+        // Act + assert
         assert!(ob.try_insert(o1).is_ok());
-        assert!(ob.try_insert(o2).is_ok());
-        println!("{ob:#?}");
+        assert!(ob.try_insert(o2).is_err());
     }
 }
