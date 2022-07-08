@@ -73,6 +73,7 @@ impl Ord for Order {
 #[cfg(test)]
 mod test {
     use super::{super::Side, Order};
+    use std::cmp::Ordering;
 
     #[test]
     fn order_index_ordering_ask() {
@@ -87,8 +88,13 @@ mod test {
             ..Order::default()
         };
 
-        assert!(o1 > o2);
-        assert!(o1 != o2);
+        // Check `Eq` implementation
+        let cmp = o1 == o2;
+        assert!(!cmp);
+
+        // Check `Ord` implementation
+        let ord = o1.cmp(&o2);
+        assert_eq!(ord, Ordering::Greater);
     }
 
     #[test]
@@ -104,7 +110,12 @@ mod test {
             ..Order::default()
         };
 
-        assert!(o1 < o2);
-        assert!(o1 != o2);
+        // Check `Eq` implementation
+        let cmp = o1 == o2;
+        assert!(!cmp);
+
+        // Check `Ord` implementation
+        let ord = o1.cmp(&o2);
+        assert_eq!(ord, Ordering::Less);
     }
 }
