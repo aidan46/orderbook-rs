@@ -1,16 +1,3 @@
-# Orderbook
-A blazingly fast orderbook library written in Rust.
-
-# Features
-- Add limit orders
-- Remove limit orders
-- Orders are sorted in Price-Time priority
-
-# Usage
-The order book can be constructed with `OrderBook::new(instrument_data)`, where `instrument_data` is a csv file with the instrument id and instrument name.
-
-# Example
-```rust
 use orderbook_rs::{
     models::{Order, Side},
     order_book::OrderBook,
@@ -32,4 +19,3 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
-```
