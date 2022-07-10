@@ -115,7 +115,7 @@ impl OrderBook {
         let instrument_side = (order.instrument_id, order.side);
         let price = order.price;
         match self.instrument_book.get_mut(&instrument_side) {
-            None => (),
+            None => bail!("InstrumentSide {instrument_side:?} not found"),
             Some(price_level) => match price_level.get_mut(&price) {
                 Some(price) => price.retain(|o| o.order_id != Some(order_id)),
                 None => bail!("Order with OrderId {order_id} not found in `InstrumentBook`"),
@@ -157,11 +157,11 @@ mod test {
         assert!(ob.order_details.get(&order_id).is_some());
         let instrument = ob.instrument_book.get(&instrument_side);
         assert!(instrument.is_some());
-        let price_level = instrument.unwrap().get(&price);
-        assert!(price_level.is_some());
-        let price_level = price_level.unwrap();
-        assert_eq!(price_level.len(), 1);
-        let inserted = price_level.iter().find(|&&o| {
+        let order_vec = instrument.unwrap().get(&price);
+        assert!(order_vec.is_some());
+        let order_vec = order_vec.unwrap();
+        assert_eq!(order_vec.len(), 1);
+        let inserted = order_vec.iter().find(|&&o| {
             o.price == price && o.qty == qty && o.side == side && o.instrument_id == instrument_id
         });
         assert!(inserted.is_some());
@@ -186,5 +186,45 @@ mod test {
         // Assert
         assert!(res.is_ok());
         assert!(ob.order_details.get(&order_id).is_none());
+        let instrument_side = (instrument_id, side);
+        let instrument = ob.instrument_book.get(&instrument_side);
+        assert!(instrument.is_some());
+        let order_vec = instrument.unwrap().get(&price);
+        assert!(order_vec.is_some());
+        let order_vec = order_vec.unwrap();
+        assert!(order_vec.is_empty());
+    }
+
+    #[test]
+    fn add_order_non_existent_instrument() {
+        // Setup
+        let mut ob = get_order_book();
+        let price = 69;
+        let qty = 420;
+        let side = Side::Ask;
+        let instrument_id = 99;
+        let order = Order::new(price, qty, side, instrument_id);
+
+        // Act
+        let res = ob.add_order(&order);
+
+        // Assert
+        assert!(res.is_err());
+        let instrument_side = (instrument_id, side);
+        let instrument = ob.instrument_book.get(&instrument_side);
+        assert!(instrument.is_none());
+    }
+
+    #[test]
+    fn remove_non_existent_order() {
+        // Setup
+        let mut ob = get_order_book();
+        let order_id = 46;
+
+        // Act
+        let res = ob.remove_order(order_id);
+
+        // Assert
+        assert!(res.is_err());
     }
 }
