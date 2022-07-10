@@ -38,7 +38,10 @@ pub struct Order {
 
 impl Order {
     #[must_use]
+    /// Constructor functions, initalizes `order_id` to `None`
+    ///
     /// # Panics
+    ///
     /// Returns an [`Err`] if current time is later than `UNIX_EPOCH`
     pub fn new(price: Price, qty: Qty, side: Side, instrument_id: InstrumentId) -> Order {
         Order {
@@ -54,6 +57,7 @@ impl Order {
         }
     }
 
+    /// Assings `order_id` to an [`Order`]
     pub fn assign_order_id(&mut self, order_id: OrderId) {
         self.order_id = Some(order_id);
     }

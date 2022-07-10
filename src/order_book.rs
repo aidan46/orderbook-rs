@@ -8,16 +8,16 @@ use std::{
     fs,
 };
 
-pub type PriceLevel = HashMap<Price, Vec<Order>>;
-pub type InstrumentSide = (InstrumentId, Side);
-pub type InstrumentBook = HashMap<InstrumentSide, PriceLevel>;
-pub type OrderDetails = HashMap<OrderId, Order>;
-pub type InstrumentMap = HashMap<InstrumentId, String>;
+type PriceLevel = HashMap<Price, Vec<Order>>;
+type InstrumentSide = (InstrumentId, Side);
+type InstrumentBook = HashMap<InstrumentSide, PriceLevel>;
+type OrderDetails = HashMap<OrderId, Order>;
+type InstrumentMap = HashMap<InstrumentId, String>;
 
 pub struct OrderBook {
-    pub instrument_book: InstrumentBook,
-    pub order_details: OrderDetails,
-    pub instrument_map: InstrumentMap,
+    instrument_book: InstrumentBook,
+    order_details: OrderDetails,
+    instrument_map: InstrumentMap,
     sequencer: Sequencer,
 }
 
@@ -45,6 +45,9 @@ impl OrderBook {
     /// Returns an [`Err`] if the instrument does not exist
     pub fn add_order(&mut self, order: &Order) -> Result<OrderId> {
         let instrument_id = order.instrument_id;
+        if !self.instrument_map.contains_key(&instrument_id) {
+            bail!("InstrumentId {instrument_id} does not exist!");
+        }
         let side = order.side;
         let price = order.price;
         let order_id = self.sequencer.get_next_id();
