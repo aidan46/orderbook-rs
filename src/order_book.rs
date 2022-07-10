@@ -38,34 +38,6 @@ impl OrderBook {
         }
     }
 
-    fn read_instruments(instrument_path: &str) -> Result<(InstrumentBook, InstrumentMap)> {
-        let data = match fs::read_to_string(instrument_path) {
-            Ok(data) => data,
-            Err(e) => bail!(e),
-        };
-        let mut instrument_book = InstrumentBook::new();
-        let mut instrument_map = InstrumentMap::new();
-        let mut rdr = csv::ReaderBuilder::new().from_reader(data.as_bytes());
-        for record in rdr.records() {
-            let record = record?;
-            let instrument_id = record.get(0).unwrap().parse()?;
-            let instrument_name = record.get(1).unwrap();
-            let ask_side = (instrument_id, Side::Ask);
-            let bid_side = (instrument_id, Side::Bid);
-            instrument_map.insert(instrument_id, instrument_name.to_owned());
-            instrument_book.insert(ask_side, PriceLevel::new());
-            instrument_book.insert(bid_side, PriceLevel::new());
-        }
-        Ok((instrument_book, instrument_map))
-    }
-
-    fn assign_order_id(order: &Order, order_id: OrderId) -> Order {
-        let mut order = *order;
-        order.order_id = Some(order_id);
-
-        order
-    }
-
     /// Add an order to the [`OrderBook`]
     ///
     /// # Errors
@@ -122,6 +94,34 @@ impl OrderBook {
             },
         }
         Ok(())
+    }
+
+    fn read_instruments(instrument_path: &str) -> Result<(InstrumentBook, InstrumentMap)> {
+        let data = match fs::read_to_string(instrument_path) {
+            Ok(data) => data,
+            Err(e) => bail!(e),
+        };
+        let mut instrument_book = InstrumentBook::new();
+        let mut instrument_map = InstrumentMap::new();
+        let mut rdr = csv::ReaderBuilder::new().from_reader(data.as_bytes());
+        for record in rdr.records() {
+            let record = record?;
+            let instrument_id = record.get(0).unwrap().parse()?;
+            let instrument_name = record.get(1).unwrap();
+            let ask_side = (instrument_id, Side::Ask);
+            let bid_side = (instrument_id, Side::Bid);
+            instrument_map.insert(instrument_id, instrument_name.to_owned());
+            instrument_book.insert(ask_side, PriceLevel::new());
+            instrument_book.insert(bid_side, PriceLevel::new());
+        }
+        Ok((instrument_book, instrument_map))
+    }
+
+    fn assign_order_id(order: &Order, order_id: OrderId) -> Order {
+        let mut order = *order;
+        order.order_id = Some(order_id);
+
+        order
     }
 }
 
