@@ -79,7 +79,7 @@ impl BookSide {
         qty: Qty,
     ) -> Option<(Vec<Order>, Qty)> {
         match self.price_levels.get_mut(&price) {
-            Some(mut price_level) => price_level.get_orders_till_qty(qty),
+            Some(price_level) => price_level.get_orders_till_qty(qty),
             None => None,
         }
     }

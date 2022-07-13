@@ -1,5 +1,4 @@
 #![warn(clippy::pedantic)]
-#![allow(unused, clippy::unused_self)]
 mod book_side;
 mod order_book;
 mod price_level;

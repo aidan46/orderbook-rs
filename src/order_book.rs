@@ -1,5 +1,5 @@
 use crate::{
-    OrderId, Price, Qty, {BookSide, PriceLevel, Sequencer, Side},
+    OrderId, Price, Qty, {BookSide, Sequencer, Side},
 };
 use anyhow::{bail, Result};
 use std::collections::HashMap;

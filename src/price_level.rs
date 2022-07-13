@@ -1,9 +1,6 @@
-use crate::{Order, OrderId, Price, Qty};
+use crate::{Order, OrderId, Qty};
 use anyhow::{bail, Result};
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::LockResult,
-};
+use std::collections::{HashMap, VecDeque};
 
 pub(super) struct PriceLevel {
     queue: VecDeque<Order>,
