@@ -174,10 +174,4 @@ mod test {
         assert!(res.is_ok());
         assert!(!ob.orders.contains_key(&id));
     }
-
-    #[test]
-    fn order_book_remove_unknown_id() {
-        // Setup
-        let mut ob = OrderBook::default();
-    }
 }
