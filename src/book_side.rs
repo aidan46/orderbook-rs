@@ -157,4 +157,54 @@ mod test {
         // Assert
         assert!(ret.is_err());
     }
+
+    #[test]
+    fn book_side_get_best_price_ask() {
+        // Setup
+        let side = Side::Ask;
+        let mut bs = BookSide::new(side);
+        // First order
+        let price = 69;
+        let qty = 420;
+        let o1 = Order { price, qty, side };
+        let id: OrderId = 1;
+        bs.insert(&o1, id);
+
+        // Second order
+        let price = 70;
+        let o2 = Order { price, qty, side };
+        let id: OrderId = 2;
+        bs.insert(&o2, id);
+
+        // Act
+        let best_price = bs.get_best_price();
+
+        // Assert
+        assert_eq!(best_price, Some(&o2.price));
+    }
+
+    #[test]
+    fn book_side_get_best_price_bid() {
+        // Setup
+        let side = Side::Bid;
+        let mut bs = BookSide::new(side);
+        // First order
+        let price = 69;
+        let qty = 420;
+        let o1 = Order { price, qty, side };
+        let id: OrderId = 1;
+        bs.insert(&o1, id);
+
+        // Second order
+        let price = 70;
+        let o2 = Order { price, qty, side };
+        let id: OrderId = 2;
+        bs.insert(&o2, id);
+
+        // Act
+        let best_price = bs.get_best_price();
+
+        // Assert
+        assert_eq!(best_price, Some(&o1.price));
+    }
 }
