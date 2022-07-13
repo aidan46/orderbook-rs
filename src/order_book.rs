@@ -23,8 +23,8 @@ impl OrderBook {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            asks: BookSide::new(),
-            bids: BookSide::new(),
+            asks: BookSide::new(Side::Ask),
+            bids: BookSide::new(Side::Bid),
             orders: HashMap::new(),
             sequencer: Sequencer::new(),
         }
@@ -91,7 +91,7 @@ impl OrderBook {
     ///
     /// Returns [`None`] if there are no orders on given side
     #[must_use]
-    pub fn get_best_price(&self, side: Side) -> Option<Price> {
+    pub fn get_best_price(&self, side: Side) -> Option<&Price> {
         match side {
             Side::Ask => self.asks.get_best_price(),
             Side::Bid => self.bids.get_best_price(),
@@ -137,7 +137,7 @@ impl Default for OrderBook {
 
 #[cfg(test)]
 mod test {
-    use crate::{Order, OrderBook, Side};
+    use crate::{Order, OrderBook, OrderId, Side};
 
     #[test]
     fn order_book_insert() {
@@ -173,5 +173,18 @@ mod test {
         // Assert
         assert!(res.is_ok());
         assert!(!ob.orders.contains_key(&id));
+    }
+
+    #[test]
+    fn order_book_remove_unknown_id() {
+        // Setup
+        let mut ob = OrderBook::default();
+        let id: OrderId = 1;
+
+        // Act
+        let ret = ob.remove(id);
+
+        // Assert
+        assert!(ret.is_err());
     }
 }

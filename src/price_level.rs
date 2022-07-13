@@ -1,3 +1,4 @@
+#![allow(unused, clippy::unused_self)]
 use crate::{Order, OrderId, Qty};
 use anyhow::{bail, Result};
 use std::collections::{HashMap, VecDeque};

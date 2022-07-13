@@ -13,14 +13,18 @@ pub enum Side {
 pub(super) struct BookSide {
     price_levels: HashMap<Price, PriceLevel>,
     orders: HashMap<OrderId, Order>,
+    side: Side,
+    prices: Vec<Price>,
 }
 
 impl BookSide {
     /// Constructor function
-    pub(super) fn new() -> Self {
+    pub(super) fn new(side: Side) -> Self {
         Self {
             price_levels: HashMap::new(),
             orders: HashMap::new(),
+            side,
+            prices: Vec::new(),
         }
     }
 
@@ -31,6 +35,11 @@ impl BookSide {
                 let mut price_lvl = PriceLevel::new();
                 price_lvl.insert(order, id);
                 new_price_lvl.insert(price_lvl);
+                self.prices.push(order.price);
+                match self.side {
+                    Side::Bid => self.prices.sort_by(Ord::cmp),
+                    Side::Ask => self.prices.sort_by(|a, b| b.cmp(a)),
+                }
             }
             Entry::Occupied(mut price_lvl) => {
                 price_lvl.get_mut().insert(order, id);
@@ -47,7 +56,13 @@ impl BookSide {
     pub(super) fn remove(&mut self, id: OrderId) -> Result<()> {
         match self.orders.remove(&id) {
             Some(order) => match self.price_levels.get_mut(&order.price) {
-                Some(price_level) => price_level.remove(id),
+                Some(price_level) => {
+                    price_level.remove(id)?;
+                    if price_level.get_total_qty() == 0 {
+                        self.prices.retain(|&p| p != order.price);
+                    }
+                    Ok(())
+                }
                 None => bail!(
                     "Order with OrderId {id} on PriceLevel {} was not found",
                     order.price
@@ -60,8 +75,8 @@ impl BookSide {
     /// Function gets the best price for the given `Side`
     ///
     /// Returns [`None`] if there are no orders on given side
-    pub(super) fn get_best_price(&self) -> Option<Price> {
-        todo!()
+    pub(super) fn get_best_price(&self) -> Option<&Price> {
+        self.prices.get(0)
     }
 
     /// Function gets the total quantity at the given `Price` and `Side` combination
@@ -85,12 +100,6 @@ impl BookSide {
     }
 }
 
-impl Default for BookSide {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[cfg(test)]
 mod test {
     use crate::{BookSide, Order, OrderId, Side};
@@ -98,10 +107,10 @@ mod test {
     #[test]
     fn book_side_insert() {
         // Setup
-        let mut bs = BookSide::default();
+        let side = Side::Ask;
+        let mut bs = BookSide::new(side);
         let price = 69;
         let qty = 420;
-        let side = Side::Ask;
         let order = Order { price, qty, side };
         let id: OrderId = 1;
 
@@ -112,15 +121,18 @@ mod test {
         assert!(bs.orders.contains_key(&id));
         assert!(bs.price_levels.contains_key(&price));
         assert_eq!(bs.get_total_qty(price), Some(qty));
+        assert_eq!(bs.prices.len(), 1);
+        let best_price = bs.prices.get(0).unwrap();
+        assert_eq!(*best_price, price);
     }
 
     #[test]
     fn book_side_remove() {
         // Setup
-        let mut bs = BookSide::default();
+        let side = Side::Ask;
+        let mut bs = BookSide::new(side);
         let price = 69;
         let qty = 420;
-        let side = Side::Ask;
         let order = Order { price, qty, side };
         let id: OrderId = 1;
 
@@ -129,12 +141,14 @@ mod test {
         // Act
         assert!(bs.remove(id).is_ok());
         assert!(!bs.orders.contains_key(&id));
+        assert!(bs.prices.is_empty());
     }
 
     #[test]
     fn book_side_remove_unknown_id() {
         // Setup
-        let mut bs = BookSide::default();
+        let side = Side::Ask;
+        let mut bs = BookSide::new(side);
         let id: OrderId = 1;
 
         // Act
