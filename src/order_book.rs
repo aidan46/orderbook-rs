@@ -4,7 +4,7 @@ use crate::{
 use anyhow::{bail, Result};
 use std::collections::HashMap;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Order {
     pub price: Price,
     pub qty: Qty,

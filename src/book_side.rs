@@ -4,7 +4,7 @@ use crate::{
 use anyhow::{bail, Result};
 use std::collections::{hash_map::Entry, HashMap};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Side {
     Ask,
     Bid,
