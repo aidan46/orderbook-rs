@@ -32,9 +32,8 @@ let order = Order {
 let order_id: u64 = ob.insert(&order);
 
 // Remove
-match ob.remove(order_id) {
-	Ok(()) => (),
-	Err(OrderBookError::UnknownId(id)) => (),
+if let Err(OrderBookError::UnknownId(id)) = ob.remove(order_id) {
+	eprintln!("Order with OrderId {order_id} not found");
 }
 ```
 
