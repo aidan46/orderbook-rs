@@ -34,7 +34,7 @@ impl OrderBook {
     ///
     /// Example:
     /// ```
-    /// use ob::{OrderBook, Order, Side};
+    /// use orderbook::{OrderBook, Order, Side};
     /// let mut ob = OrderBook::new();
     /// let price = 69;
     /// let qty = 420;
@@ -65,7 +65,7 @@ impl OrderBook {
     ///
     /// Example:
     /// ```
-    /// use ob::{OrderBook};
+    /// use orderbook::{OrderBook};
     ///
     /// let mut ob = OrderBook::new();
     /// let id = 69;
