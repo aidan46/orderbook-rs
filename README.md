@@ -17,9 +17,9 @@ orderbook = { git = "https://github.com/aidan46/orderbook-rs/" }
 ```
 
 ### Example Usage
-Constructing an order book and inserting an order
+Constructing an order book and inserting an order, then deleting it.
 ```rust
-use orderbook::{Order, OrderBook, Side};
+use orderbook::{error::OrderBookError, Order, OrderBook, Side};
 
 let mut ob = OrderBook::default();
 let order = Order {
@@ -28,7 +28,14 @@ let order = Order {
 	side: Side::Ask,
 };
 
-let order_id = ob.insert(&order);
+// Insert
+let order_id: u64 = ob.insert(&order);
+
+// Remove
+match ob.remove(order_id) {
+	Ok(()) => (),
+	Err(OrderBookError::UnknownId(id)) => (),
+}
 ```
 
 ## Order book implementation details
