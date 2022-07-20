@@ -1,6 +1,5 @@
 #![allow(unused, clippy::unused_self)]
-use crate::{Order, OrderId, Qty};
-use anyhow::{bail, Result};
+use crate::{error::OrderBookError, Order, OrderId, Qty};
 use std::collections::{HashMap, VecDeque};
 
 pub(super) struct PriceLevel {
@@ -27,7 +26,7 @@ impl PriceLevel {
     }
 
     /// Function removes `Order` from `PriceLevel`
-    pub(super) fn remove(&mut self, id: OrderId) -> Result<()> {
+    pub(super) fn remove(&mut self, id: OrderId) -> Result<(), OrderBookError> {
         match self.orders.remove(&id) {
             Some(order) => {
                 self.total_qty -= order.qty;
@@ -35,7 +34,7 @@ impl PriceLevel {
                 self.queue.retain(|&o| o != order);
                 Ok(())
             }
-            None => bail!("Order with OrderId {id} not found in PriceLevel"),
+            None => Err(OrderBookError::UnknownId(id)),
         }
     }
 

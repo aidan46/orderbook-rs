@@ -1,7 +1,7 @@
 use crate::{
+    error::OrderBookError,
     OrderId, Price, Qty, {BookSide, Sequencer, Side},
 };
-use anyhow::{bail, Result};
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -75,13 +75,13 @@ impl OrderBook {
     ///     Err(e) => (), // OrderId not found!
     /// }
     /// ```
-    pub fn remove(&mut self, id: OrderId) -> Result<()> {
+    pub fn remove(&mut self, id: OrderId) -> Result<(), OrderBookError> {
         match self.orders.remove(&id) {
             Some(order) => match order.side {
                 Side::Ask => self.asks.remove(id),
                 Side::Bid => self.bids.remove(id),
             },
-            None => bail!("Order with OrderId {id} is not present"),
+            None => Err(OrderBookError::UnknownId(id)),
         }
     }
 

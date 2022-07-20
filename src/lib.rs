@@ -1,5 +1,6 @@
 #![warn(clippy::pedantic)]
 mod book_side;
+mod error;
 mod order_book;
 mod price_level;
 mod sequencer;

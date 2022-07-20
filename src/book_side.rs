@@ -1,7 +1,7 @@
 use crate::{
+    error::OrderBookError,
     OrderId, Price, Qty, {Order, PriceLevel},
 };
-use anyhow::{bail, Result};
 use std::collections::{hash_map::Entry, HashMap};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,22 +53,21 @@ impl BookSide {
     /// # Errors
     ///
     /// Returns [`Err`] if the order with given `OrderId` is not present
-    pub(super) fn remove(&mut self, id: OrderId) -> Result<()> {
+    pub(super) fn remove(&mut self, id: OrderId) -> Result<(), OrderBookError> {
         match self.orders.remove(&id) {
             Some(order) => match self.price_levels.get_mut(&order.price) {
                 Some(price_level) => {
-                    price_level.remove(id)?;
+                    if price_level.remove(id).is_err() {
+                        return Err(OrderBookError::UnknownId(id));
+                    }
                     if price_level.get_total_qty() == 0 {
                         self.prices.retain(|&p| p != order.price);
                     }
                     Ok(())
                 }
-                None => bail!(
-                    "Order with OrderId {id} on PriceLevel {} was not found",
-                    order.price
-                ),
+                None => Err(OrderBookError::UnknownId(id)),
             },
-            None => bail!("Order with OrderId {id} is not present"),
+            None => Err(OrderBookError::UnknownId(id)),
         }
     }
 
