@@ -10,6 +10,7 @@
 ## Getting started
 Add the orderbook-rs to your `Cargo.toml` file.
 ```toml
+..
 [dependencies]
 orderbook = { git = "https://github.com/aidan46/orderbook-rs/" }
 ..
