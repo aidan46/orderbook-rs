@@ -1,7 +1,4 @@
-use crate::{
-    error::OrderBookError,
-    OrderId, Price, Qty, {BookSide, Sequencer, Side},
-};
+use crate::{error::OrderBookError, BookSide, OrderId, Price, Qty, Side};
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -15,7 +12,6 @@ pub struct OrderBook {
     asks: BookSide,
     bids: BookSide,
     orders: HashMap<OrderId, Order>,
-    sequencer: Sequencer,
 }
 
 impl OrderBook {
@@ -26,7 +22,6 @@ impl OrderBook {
             asks: BookSide::new(Side::Ask),
             bids: BookSide::new(Side::Bid),
             orders: HashMap::new(),
-            sequencer: Sequencer::new(),
         }
     }
 
@@ -48,8 +43,7 @@ impl OrderBook {
     /// ob.insert(order);
     ///
     /// ```
-    pub fn insert(&mut self, order: Order) -> OrderId {
-        let id = self.sequencer.get_next_id();
+    pub fn insert(&mut self, order: Order, id: OrderId) -> OrderId {
         match order.side {
             Side::Ask => self.asks.insert(&order, id),
             Side::Bid => self.bids.insert(&order, id),
@@ -90,7 +84,6 @@ impl OrderBook {
     /// Returns [`Some`] `Price` on success
     ///
     /// Returns [`None`] if there are no orders on given side
-    #[must_use]
     pub fn get_best_price(&self, side: Side) -> Option<&Price> {
         match side {
             Side::Ask => self.asks.get_best_price(),
@@ -103,7 +96,6 @@ impl OrderBook {
     /// Returns [`Some`] `Qty` on success
     ///
     /// Returns [`None`] if there are no orders on given `Side` and `Price` combination
-    #[must_use]
     pub fn get_total_qty(&self, price: Price, side: Side) -> Option<Qty> {
         match side {
             Side::Ask => self.asks.get_total_qty(price),
@@ -147,9 +139,10 @@ mod test {
         let qty = 420;
         let side = Side::Ask;
         let order = Order { price, qty, side };
+        let id = 1;
 
         // Act
-        let order_id = ob.insert(order);
+        let order_id = ob.insert(order, id);
 
         // Assert
         assert_eq!(order_id, 1);
@@ -164,8 +157,9 @@ mod test {
         let qty = 420;
         let side = Side::Ask;
         let order = Order { price, qty, side };
+        let id = 1;
 
-        let id = ob.insert(order);
+        let id = ob.insert(order, id);
 
         // Act
         let res = ob.remove(id);
@@ -197,12 +191,13 @@ mod test {
         let price = 69;
         let qty = 420;
         let o1 = Order { price, qty, side };
-        ob.insert(o1);
+        let id = 1;
+        ob.insert(o1, id);
 
         // Second order
         let price = 70;
         let o2 = Order { price, qty, side };
-        ob.insert(o2);
+        ob.insert(o2, id);
 
         // Act
         let best_price = ob.get_best_price(side);
@@ -220,12 +215,13 @@ mod test {
         let price = 69;
         let qty = 420;
         let o1 = Order { price, qty, side };
-        ob.insert(o1);
+        let id = 1;
+        ob.insert(o1, id);
 
         // Second order
         let price = 70;
         let o2 = Order { price, qty, side };
-        ob.insert(o2);
+        ob.insert(o2, id);
 
         // Act
         let best_price = ob.get_best_price(side);
