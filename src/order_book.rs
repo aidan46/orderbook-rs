@@ -1,5 +1,5 @@
 use crate::{error::OrderBookError, BookSide, OrderId, Price, Qty, Side};
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Order {
@@ -27,6 +27,9 @@ impl OrderBook {
 
     /// Function insert a new [`Order`] into the [`OrderBook`]
     ///
+    /// # Errors
+    ///
+    /// Returns [`Err`] if the given `id` is already in the orderbook
     /// Example:
     /// ```
     /// use orderbook::{OrderBook, Order, Side};
@@ -39,17 +42,23 @@ impl OrderBook {
     ///     qty,
     ///     side
     /// };
+    /// let id = 1;
     ///
-    /// ob.insert(order);
+    /// ob.insert(order, id);
     ///
     /// ```
-    pub fn insert(&mut self, order: Order, id: OrderId) -> OrderId {
-        match order.side {
-            Side::Ask => self.asks.insert(&order, id),
-            Side::Bid => self.bids.insert(&order, id),
-        };
-        self.orders.insert(id, order);
-        id
+    pub fn insert(&mut self, order: Order, id: OrderId) -> Result<(), OrderBookError> {
+        match self.orders.entry(id) {
+            Entry::Vacant(entry) => {
+                match order.side {
+                    Side::Ask => self.asks.insert(&order, id),
+                    Side::Bid => self.bids.insert(&order, id),
+                };
+                entry.insert(order);
+                Ok(())
+            }
+            Entry::Occupied(..) => Err(OrderBookError::DuplicateOrderId(id)),
+        }
     }
 
     /// Function removes an [`Order`] according to an `OrderId`
@@ -71,10 +80,13 @@ impl OrderBook {
     /// ```
     pub fn remove(&mut self, id: OrderId) -> Result<(), OrderBookError> {
         match self.orders.remove(&id) {
-            Some(order) => match order.side {
-                Side::Ask => self.asks.remove(id),
-                Side::Bid => self.bids.remove(id),
-            },
+            Some(order) => {
+                match order.side {
+                    Side::Ask => self.asks.remove(id),
+                    Side::Bid => self.bids.remove(id),
+                };
+                Ok(())
+            }
             None => Err(OrderBookError::UnknownId(id)),
         }
     }
@@ -132,7 +144,7 @@ mod test {
     use crate::{Order, OrderBook, OrderId, Side};
 
     #[test]
-    fn order_book_insert() {
+    fn insert() {
         // Setup
         let mut ob = OrderBook::default();
         let price = 69;
@@ -142,15 +154,15 @@ mod test {
         let id = 1;
 
         // Act
-        let order_id = ob.insert(order, id);
+        let ret = ob.insert(order, id);
 
         // Assert
-        assert_eq!(order_id, 1);
-        assert!(ob.orders.contains_key(&order_id));
+        assert!(ret.is_ok());
+        assert!(ob.orders.contains_key(&id));
     }
 
     #[test]
-    fn order_book_remove() {
+    fn remove() {
         // Setup
         let mut ob = OrderBook::default();
         let price = 69;
@@ -159,7 +171,8 @@ mod test {
         let order = Order { price, qty, side };
         let id = 1;
 
-        let id = ob.insert(order, id);
+        let res = ob.insert(order, id);
+        assert!(res.is_ok());
 
         // Act
         let res = ob.remove(id);
@@ -170,20 +183,20 @@ mod test {
     }
 
     #[test]
-    fn order_book_remove_unknown_id() {
+    fn remove_unknown_id() {
         // Setup
         let mut ob = OrderBook::default();
         let id: OrderId = 1;
 
         // Act
-        let ret = ob.remove(id);
+        let res = ob.remove(id);
 
         // Assert
-        assert!(ret.is_err());
+        assert!(res.is_err());
     }
 
     #[test]
-    fn order_book_get_best_price_ask() {
+    fn get_best_price_ask() {
         // Setup
         let side = Side::Ask;
         let mut ob = OrderBook::new();
@@ -192,12 +205,14 @@ mod test {
         let qty = 420;
         let o1 = Order { price, qty, side };
         let id = 1;
-        ob.insert(o1, id);
+        let res = ob.insert(o1, id);
+        assert!(res.is_ok());
 
         // Second order
         let price = 70;
         let o2 = Order { price, qty, side };
-        ob.insert(o2, id);
+        let res = ob.insert(o2, id + 1);
+        assert!(res.is_ok());
 
         // Act
         let best_price = ob.get_best_price(side);
@@ -207,7 +222,7 @@ mod test {
     }
 
     #[test]
-    fn book_side_get_best_price_bid() {
+    fn get_best_price_bid() {
         // Setup
         let side = Side::Bid;
         let mut ob = OrderBook::new();
@@ -216,17 +231,48 @@ mod test {
         let qty = 420;
         let o1 = Order { price, qty, side };
         let id = 1;
-        ob.insert(o1, id);
+        let res = ob.insert(o1, id);
+        assert!(res.is_ok());
 
         // Second order
         let price = 70;
         let o2 = Order { price, qty, side };
-        ob.insert(o2, id);
+        let res = ob.insert(o2, id + 1);
+        assert!(res.is_ok());
 
         // Act
         let best_price = ob.get_best_price(side);
 
         // Assert
         assert_eq!(best_price, Some(&o1.price));
+    }
+
+    #[test]
+    fn get_orders_till_qty() {
+        // Setup
+        let side = Side::Bid;
+        let mut ob = OrderBook::new();
+        // First order
+        let price = 69;
+        let qty = 420;
+        let o1 = Order { price, qty, side };
+        let id = 1;
+        let res = ob.insert(o1, id);
+        assert!(res.is_ok());
+
+        // Second order
+        let price = 70;
+        let o2 = Order { price, qty, side };
+        let res = ob.insert(o2, id + 1);
+        assert!(res.is_ok());
+
+        // Act
+        let best_price = ob.get_best_price(side);
+        assert_eq!(best_price, Some(&o1.price));
+
+        //let bp_orders = ob.get_orders_till_qty(*best_price.unwrap(), side, qty);
+        // Assert
+        //println!("return = {bp_orders:#?}");
+        //assert!(bp_orders.is_some());
     }
 }

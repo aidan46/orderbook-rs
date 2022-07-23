@@ -1,5 +1,4 @@
 use crate::{
-    error::OrderBookError,
     OrderId, Price, Qty, {Order, PriceLevel},
 };
 use std::collections::{hash_map::Entry, HashMap};
@@ -53,21 +52,18 @@ impl BookSide {
     /// # Errors
     ///
     /// Returns [`Err`] if the order with given `OrderId` is not present
-    pub(super) fn remove(&mut self, id: OrderId) -> Result<(), OrderBookError> {
+    pub(super) fn remove(&mut self, id: OrderId) {
         match self.orders.remove(&id) {
             Some(order) => match self.price_levels.get_mut(&order.price) {
                 Some(price_level) => {
-                    if price_level.remove(id).is_err() {
-                        return Err(OrderBookError::UnknownId(id));
-                    }
+                    price_level.remove(id);
                     if price_level.get_total_qty() == 0 {
                         self.prices.retain(|&p| p != order.price);
                     }
-                    Ok(())
                 }
-                None => Err(OrderBookError::UnknownId(id)),
+                None => (),
             },
-            None => Err(OrderBookError::UnknownId(id)),
+            None => (),
         }
     }
 
@@ -92,10 +88,9 @@ impl BookSide {
         price: Price,
         qty: Qty,
     ) -> Option<(Vec<Order>, Qty)> {
-        match self.price_levels.get_mut(&price) {
-            Some(price_level) => price_level.get_orders_till_qty(qty),
-            None => None,
-        }
+        self.price_levels
+            .get_mut(&price)
+            .map(|price_level| price_level.get_orders_till_qty(qty))
     }
 }
 
@@ -136,25 +131,11 @@ mod test {
         let id: OrderId = 1;
 
         bs.insert(&order, id);
+        bs.remove(id);
 
         // Act
-        assert!(bs.remove(id).is_ok());
         assert!(!bs.orders.contains_key(&id));
         assert!(bs.prices.is_empty());
-    }
-
-    #[test]
-    fn book_side_remove_unknown_id() {
-        // Setup
-        let side = Side::Ask;
-        let mut bs = BookSide::new(side);
-        let id: OrderId = 1;
-
-        // Act
-        let ret = bs.remove(id);
-
-        // Assert
-        assert!(ret.is_err());
     }
 
     #[test]

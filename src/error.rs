@@ -6,4 +6,6 @@ use thiserror::Error;
 pub enum OrderBookError {
     #[error("OrderId not found")]
     UnknownId(OrderId),
+    #[error("Duplicate OrderId {0}")]
+    DuplicateOrderId(OrderId),
 }
