@@ -29,7 +29,7 @@ fn single_side_single_price() {
     let average = average(&results);
     println!("\n|============= single side + price =============|");
     println!("|\t\tInserted {LIMIT} orders\t\t|");
-    println!("|\tTotal duration orders:\t{total:?}\t|");
+    println!("|\tTotal duration:\t\t{total:?}\t|");
     println!("|\tAverage time per order:\t{average:?}\t\t|");
     println!("|===============================================|\n");
 }
@@ -54,7 +54,7 @@ fn single_side_changing_price() {
     let average = average(&results);
     println!("\n|=============== changing price ================|");
     println!("|\t\tInserted {LIMIT} orders\t\t|");
-    println!("|\tTotal duration orders:\t{total:?}\t|");
+    println!("|\tTotal duration:\t\t{total:?}\t|");
     println!("|\tAverage time per order:\t{average:?}\t\t|");
     println!("|===============================================|\n");
 }
@@ -83,7 +83,7 @@ fn changing_side_and_price() {
     let average = average(&results);
     println!("\n|============ changing price + side ============|");
     println!("|\t\tInserted {LIMIT} orders\t\t|");
-    println!("|\tTotal duration orders:\t{total:?}\t|");
+    println!("|\tTotal duration:\t\t{total:?}\t|");
     println!("|\tAverage time per order:\t{average:?}\t\t|");
     println!("|===============================================|\n");
 }
