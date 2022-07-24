@@ -2,7 +2,7 @@
 use crate::OrderId;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum OrderBookError {
     #[error("OrderId not found")]
     UnknownId(OrderId),

@@ -1,4 +1,4 @@
-use crate::{error::OrderBookError, BookSide, OrderId, Price, Qty, Side};
+use crate::{BookSide, OrderBookError, OrderId, Price, Qty, Side};
 use std::collections::{hash_map::Entry, HashMap};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -15,6 +15,7 @@ pub struct Order {
 }
 
 impl Order {
+    /// Constructor function
     pub fn new(price: Price, qty: Qty, side: Side, id: OrderId) -> Order {
         Self {
             price,
@@ -129,7 +130,7 @@ impl Default for OrderBook {
 
 #[cfg(test)]
 mod test {
-    use crate::{Order, OrderBook, OrderId, Side};
+    use crate::{Order, OrderBook, OrderBookError, OrderId, Side};
 
     #[test]
     fn insert() {
@@ -152,6 +153,29 @@ mod test {
         // Assert
         assert!(res.is_ok());
         assert!(ob.orders.contains_key(&id));
+    }
+
+    #[test]
+    fn insert_duplicate_id() {
+        // Setup
+        let mut ob = OrderBook::default();
+        let price = 69;
+        let qty = 420;
+        let side = Side::Ask;
+        let id = 1;
+        let order = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+
+        assert!(ob.insert(order).is_ok());
+        // Act
+        let res = ob.insert(order);
+
+        assert!(res.is_err());
+        assert_eq!(res, Err(OrderBookError::DuplicateOrderId(id)));
     }
 
     #[test]

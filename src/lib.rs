@@ -27,6 +27,7 @@ mod price_level;
 
 use book_side::BookSide;
 pub use book_side::Side;
+pub use error::OrderBookError;
 pub use order_book::{Order, OrderBook};
 use price_level::PriceLevel;
 
