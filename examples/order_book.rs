@@ -6,12 +6,7 @@ fn main() {
     let side = Side::Ask;
     let price = 69;
     let qty = 420;
-    let order = Order {
-        price,
-        qty,
-        side,
-        id,
-    };
+    let order = Order::new(price, qty, side, id);
 
     // Insert order
     match ob.insert(order) {

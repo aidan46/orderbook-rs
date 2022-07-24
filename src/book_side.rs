@@ -4,8 +4,11 @@ use crate::{
 use std::collections::{hash_map::Entry, HashMap};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Ask or Bid
 pub enum Side {
+    /// Ordered in ascending order
     Ask,
+    /// Ordered in descending order
     Bid,
 }
 

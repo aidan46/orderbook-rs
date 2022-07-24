@@ -1,5 +1,25 @@
-#![warn(clippy::pedantic)]
-#![allow(clippy::must_use_candidate)]
+//! orderbook
+//!
+//! A limit order book that sorts order First In First Out (FIFO)
+//!
+//! Example:
+//! ```
+//! use orderbook::{OrderBook, Order, Side};
+//!
+//! let mut ob = OrderBook::new();
+//! let order = Order {
+//!     price: 69,
+//!     qty: 420,
+//!     side: Side::Ask,
+//!     id: 1
+//! };
+//!
+//! match ob.insert(order) {
+//!     Ok(()) => (),
+//!     Err(e) => (),
+//! }
+//!
+//! ```
 mod book_side;
 mod error;
 mod order_book;
