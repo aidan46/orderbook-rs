@@ -73,7 +73,7 @@ impl BookSide {
 
     /// Function gets the best price for the given `Side`
     ///
-    /// Returns [`None`] if there are no map on given side
+    /// Returns [`None`] if there are no orders on given side
     pub(super) fn get_best_price(&self) -> Option<&Price> {
         self.prices.get(0)
     }
@@ -83,7 +83,7 @@ impl BookSide {
         self.price_levels.get(&price).map(PriceLevel::get_total_qty)
     }
 
-    /// Function drains map on the given `Price` and `Side` combination up to the given `Qty`
+    /// Function drains orders on the given `Price` and `Side` combination up to the given `Qty`
     ///
     /// Returns [`Some`] with map and total collected `Qty`
     /// Returns [`None`] if there are no map on the given `Side` and `Price` combination
@@ -98,9 +98,9 @@ impl BookSide {
             .map(|price_level| price_level.get_orders_till_qty(qty))
         {
             Some((orders, total_qty)) => {
-                for order in &orders {
+                orders.iter().for_each(|order| {
                     self.map.remove(&order.id);
-                }
+                });
                 Some((orders, total_qty))
             }
             None => None,
