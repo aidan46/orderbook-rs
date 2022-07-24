@@ -11,7 +11,7 @@ pub enum Side {
 
 pub(super) struct BookSide {
     price_levels: HashMap<Price, PriceLevel>,
-    orders: HashMap<OrderId, Order>,
+    map: HashMap<OrderId, Order>,
     side: Side,
     prices: Vec<Price>,
 }
@@ -21,18 +21,19 @@ impl BookSide {
     pub(super) fn new(side: Side) -> Self {
         Self {
             price_levels: HashMap::new(),
-            orders: HashMap::new(),
+            map: HashMap::new(),
             side,
             prices: Vec::new(),
         }
     }
 
     /// Function insert new order into the `BookSide`
-    pub(super) fn insert(&mut self, order: &Order, id: OrderId) {
+    pub(super) fn insert(&mut self, order: &Order) {
+        let id = order.id;
         match self.price_levels.entry(order.price) {
             Entry::Vacant(new_price_lvl) => {
                 let mut price_lvl = PriceLevel::new();
-                price_lvl.insert(order, id);
+                price_lvl.insert(order);
                 new_price_lvl.insert(price_lvl);
                 self.prices.push(order.price);
                 match self.side {
@@ -41,10 +42,10 @@ impl BookSide {
                 }
             }
             Entry::Occupied(mut price_lvl) => {
-                price_lvl.get_mut().insert(order, id);
+                price_lvl.get_mut().insert(order);
             }
         }
-        self.orders.insert(id, *order);
+        self.map.insert(id, *order);
     }
 
     /// Function removes order with given `OrderId`
@@ -53,7 +54,7 @@ impl BookSide {
     ///
     /// Returns [`Err`] if the order with given `OrderId` is not present
     pub(super) fn remove(&mut self, id: OrderId) {
-        match self.orders.remove(&id) {
+        match self.map.remove(&id) {
             Some(order) => match self.price_levels.get_mut(&order.price) {
                 Some(price_level) => {
                     price_level.remove(id);
@@ -69,7 +70,7 @@ impl BookSide {
 
     /// Function gets the best price for the given `Side`
     ///
-    /// Returns [`None`] if there are no orders on given side
+    /// Returns [`None`] if there are no map on given side
     pub(super) fn get_best_price(&self) -> Option<&Price> {
         self.prices.get(0)
     }
@@ -79,18 +80,28 @@ impl BookSide {
         self.price_levels.get(&price).map(PriceLevel::get_total_qty)
     }
 
-    /// Function drains orders on the given `Price` and `Side` combination up to the given `Qty`
+    /// Function drains map on the given `Price` and `Side` combination up to the given `Qty`
     ///
-    /// Returns [`Some`] with orders and total collected `Qty`
-    /// Returns [`None`] if there are no orders on the given `Side` and `Price` combination
+    /// Returns [`Some`] with map and total collected `Qty`
+    /// Returns [`None`] if there are no map on the given `Side` and `Price` combination
     pub(super) fn get_orders_till_qty(
         &mut self,
         price: Price,
         qty: Qty,
     ) -> Option<(Vec<Order>, Qty)> {
-        self.price_levels
+        match self
+            .price_levels
             .get_mut(&price)
             .map(|price_level| price_level.get_orders_till_qty(qty))
+        {
+            Some((orders, total_qty)) => {
+                for order in &orders {
+                    self.map.remove(&order.id);
+                }
+                Some((orders, total_qty))
+            }
+            None => None,
+        }
     }
 }
 
@@ -99,20 +110,25 @@ mod test {
     use crate::{BookSide, Order, OrderId, Side};
 
     #[test]
-    fn book_side_insert() {
+    fn insert() {
         // Setup
         let side = Side::Ask;
         let mut bs = BookSide::new(side);
         let price = 69;
         let qty = 420;
-        let order = Order { price, qty, side };
         let id: OrderId = 1;
+        let order = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
 
         // Act
-        bs.insert(&order, id);
+        bs.insert(&order);
 
         // Assert
-        assert!(bs.orders.contains_key(&id));
+        assert!(bs.map.contains_key(&id));
         assert!(bs.price_levels.contains_key(&price));
         assert_eq!(bs.get_total_qty(price), Some(qty));
         assert_eq!(bs.prices.len(), 1);
@@ -121,40 +137,55 @@ mod test {
     }
 
     #[test]
-    fn book_side_remove() {
+    fn remove() {
         // Setup
         let side = Side::Ask;
         let mut bs = BookSide::new(side);
         let price = 69;
         let qty = 420;
-        let order = Order { price, qty, side };
         let id: OrderId = 1;
+        let order = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
 
-        bs.insert(&order, id);
+        bs.insert(&order);
         bs.remove(id);
 
         // Act
-        assert!(!bs.orders.contains_key(&id));
+        assert!(!bs.map.contains_key(&id));
         assert!(bs.prices.is_empty());
     }
 
     #[test]
-    fn book_side_get_best_price_ask() {
+    fn get_best_price_ask() {
         // Setup
         let side = Side::Ask;
         let mut bs = BookSide::new(side);
         // First order
         let price = 69;
         let qty = 420;
-        let o1 = Order { price, qty, side };
         let id: OrderId = 1;
-        bs.insert(&o1, id);
+        let o1 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        bs.insert(&o1);
 
         // Second order
         let price = 70;
-        let o2 = Order { price, qty, side };
         let id: OrderId = 2;
-        bs.insert(&o2, id);
+        let o2 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        bs.insert(&o2);
 
         // Act
         let best_price = bs.get_best_price();
@@ -164,27 +195,119 @@ mod test {
     }
 
     #[test]
-    fn book_side_get_best_price_bid() {
+    fn get_best_price_bid() {
         // Setup
         let side = Side::Bid;
         let mut bs = BookSide::new(side);
         // First order
         let price = 69;
         let qty = 420;
-        let o1 = Order { price, qty, side };
         let id: OrderId = 1;
-        bs.insert(&o1, id);
+        let o1 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        bs.insert(&o1);
 
         // Second order
         let price = 70;
-        let o2 = Order { price, qty, side };
         let id: OrderId = 2;
-        bs.insert(&o2, id);
+        let o2 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        bs.insert(&o2);
 
         // Act
         let best_price = bs.get_best_price();
 
         // Assert
         assert_eq!(best_price, Some(&o1.price));
+    }
+
+    #[test]
+    fn get_total_qty() {
+        // Setup
+        let side = Side::Bid;
+        let mut bs = BookSide::new(side);
+        // First order
+        let price = 69;
+        let qty = 420;
+        let id: OrderId = 1;
+        let o1 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        bs.insert(&o1);
+
+        // Second order
+        let id: OrderId = 2;
+        let o2 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        bs.insert(&o2);
+
+        // Act
+        let total_qty = bs.get_total_qty(price);
+
+        // Assert
+        assert_eq!(total_qty, Some(qty * 2));
+    }
+
+    #[test]
+    // Function tested in `PriceLevel`
+    fn get_till_qty() {
+        // Setup
+        let side = Side::Bid;
+        let mut bs = BookSide::new(side);
+        // First order
+        let price = 69;
+        let qty = 420;
+        let id: OrderId = 1;
+        let o1 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        bs.insert(&o1);
+
+        // Second order
+        let id_2: OrderId = 2;
+        let o2 = Order {
+            price,
+            qty,
+            side,
+            id: id_2,
+        };
+        bs.insert(&o2);
+
+        // Act
+        let res = bs.get_orders_till_qty(price, qty * 2);
+        assert!(res.is_some());
+        let (items, total_qty) = res.unwrap();
+
+        // Assert
+        assert_eq!(items.len(), 2);
+        assert_eq!(total_qty, qty * 2);
+
+        // First item
+        let item = items.get(0).unwrap();
+        assert_eq!(item.qty, qty);
+        assert!(!bs.map.contains_key(&id));
+
+        // First item
+        let item = items.get(1).unwrap();
+        assert_eq!(item.qty, qty);
+        assert!(!bs.map.contains_key(&id_2));
     }
 }

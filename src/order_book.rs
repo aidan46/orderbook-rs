@@ -6,6 +6,7 @@ pub struct Order {
     pub price: Price,
     pub qty: Qty,
     pub side: Side,
+    pub id: OrderId,
 }
 
 pub struct OrderBook {
@@ -37,22 +38,24 @@ impl OrderBook {
     /// let price = 69;
     /// let qty = 420;
     /// let side = Side::Ask;
+    /// let id = 1;
     /// let order = Order {
     ///     price,
     ///     qty,
-    ///     side
+    ///     side,
+    ///     id
     /// };
-    /// let id = 1;
     ///
-    /// ob.insert(order, id);
+    /// ob.insert(order);
     ///
     /// ```
-    pub fn insert(&mut self, order: Order, id: OrderId) -> Result<(), OrderBookError> {
+    pub fn insert(&mut self, order: Order) -> Result<(), OrderBookError> {
+        let id = order.id;
         match self.orders.entry(id) {
             Entry::Vacant(entry) => {
                 match order.side {
-                    Side::Ask => self.asks.insert(&order, id),
-                    Side::Bid => self.bids.insert(&order, id),
+                    Side::Ask => self.asks.insert(&order),
+                    Side::Bid => self.bids.insert(&order),
                 };
                 entry.insert(order);
                 Ok(())
@@ -150,14 +153,19 @@ mod test {
         let price = 69;
         let qty = 420;
         let side = Side::Ask;
-        let order = Order { price, qty, side };
         let id = 1;
+        let order = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
 
         // Act
-        let ret = ob.insert(order, id);
+        let res = ob.insert(order);
 
         // Assert
-        assert!(ret.is_ok());
+        assert!(res.is_ok());
         assert!(ob.orders.contains_key(&id));
     }
 
@@ -168,10 +176,15 @@ mod test {
         let price = 69;
         let qty = 420;
         let side = Side::Ask;
-        let order = Order { price, qty, side };
         let id = 1;
+        let order = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
 
-        let res = ob.insert(order, id);
+        let res = ob.insert(order);
         assert!(res.is_ok());
 
         // Act
@@ -203,15 +216,25 @@ mod test {
         // First order
         let price = 69;
         let qty = 420;
-        let o1 = Order { price, qty, side };
         let id = 1;
-        let res = ob.insert(o1, id);
+        let o1 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        let res = ob.insert(o1);
         assert!(res.is_ok());
 
         // Second order
         let price = 70;
-        let o2 = Order { price, qty, side };
-        let res = ob.insert(o2, id + 1);
+        let o2 = Order {
+            price,
+            qty,
+            side,
+            id: id + 1,
+        };
+        let res = ob.insert(o2);
         assert!(res.is_ok());
 
         // Act
@@ -229,15 +252,25 @@ mod test {
         // First order
         let price = 69;
         let qty = 420;
-        let o1 = Order { price, qty, side };
         let id = 1;
-        let res = ob.insert(o1, id);
+        let o1 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        let res = ob.insert(o1);
         assert!(res.is_ok());
 
         // Second order
         let price = 70;
-        let o2 = Order { price, qty, side };
-        let res = ob.insert(o2, id + 1);
+        let o2 = Order {
+            price,
+            qty,
+            side,
+            id: id + 1,
+        };
+        let res = ob.insert(o2);
         assert!(res.is_ok());
 
         // Act
@@ -255,24 +288,48 @@ mod test {
         // First order
         let price = 69;
         let qty = 420;
-        let o1 = Order { price, qty, side };
         let id = 1;
-        let res = ob.insert(o1, id);
+        let o1 = Order {
+            price,
+            qty,
+            side,
+            id,
+        };
+        let res = ob.insert(o1);
         assert!(res.is_ok());
 
         // Second order
-        let price = 70;
-        let o2 = Order { price, qty, side };
-        let res = ob.insert(o2, id + 1);
+        let price = 69;
+        let id_2 = id + 1;
+        let o2 = Order {
+            price,
+            qty,
+            side,
+            id: id_2,
+        };
+        let res = ob.insert(o2);
         assert!(res.is_ok());
 
         // Act
-        let best_price = ob.get_best_price(side);
-        assert_eq!(best_price, Some(&o1.price));
-
-        //let bp_orders = ob.get_orders_till_qty(*best_price.unwrap(), side, qty);
+        let res = ob.get_orders_till_qty(price, side, qty * 2);
+        assert!(res.is_some());
+        let (orders, total_qty) = res.unwrap();
         // Assert
-        //println!("return = {bp_orders:#?}");
-        //assert!(bp_orders.is_some());
+        assert_eq!(orders.len(), 2);
+        assert_eq!(total_qty, qty * 2);
+
+        // First item
+        let item = orders.get(0).unwrap();
+        assert_eq!(item.id, id);
+        assert_eq!(item.price, price);
+        assert_eq!(item.qty, qty);
+        assert_eq!(item.side, side);
+
+        // Second item
+        let item = orders.get(1).unwrap();
+        assert_eq!(item.id, id_2);
+        assert_eq!(item.price, price);
+        assert_eq!(item.qty, qty);
+        assert_eq!(item.side, side);
     }
 }
