@@ -1,7 +1,10 @@
 use crate::{
     OrderId, Price, Qty, {Order, PriceLevel},
 };
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    ops::Not,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// Ask or Bid
@@ -10,6 +13,17 @@ pub enum Side {
     Ask,
     /// Ordered in descending order
     Bid,
+}
+
+impl Not for Side {
+    type Output = Side;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Side::Ask => Side::Bid,
+            Side::Bid => Side::Ask,
+        }
+    }
 }
 
 pub(super) struct BookSide {
