@@ -1,7 +1,9 @@
 use crate::{BookSide, OrderBookError, OrderId, Price, Qty, Side};
-use std::collections::{hash_map::Entry, HashMap};
+use serde::{Deserialize, Serialize};
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Order {
     /// Price level of the order
     pub price: Price,
