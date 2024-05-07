@@ -71,25 +71,19 @@ impl BookSide {
     ///
     /// Returns [`Err`] if the order with given `OrderId` is not present
     pub(super) fn remove(&mut self, id: OrderId) {
-        match self.map.remove(&id) {
-            Some(order) => match self.price_levels.get_mut(&order.price) {
-                Some(price_level) => {
-                    price_level.remove(id);
-                    if price_level.get_total_qty() == 0 {
-                        self.prices.retain(|&p| p != order.price);
-                    }
-                }
-                None => (),
-            },
-            None => (),
-        }
+        if let Some(order) = self.map.remove(&id) { if let Some(price_level) = self.price_levels.get_mut(&order.price) {
+            price_level.remove(id);
+            if price_level.get_total_qty() == 0 {
+                self.prices.retain(|&p| p != order.price);
+            }
+        } }
     }
 
     /// Function gets the best price for the given `Side`
     ///
     /// Returns [`None`] if there are no orders on given side
     pub(super) fn get_best_price(&self) -> Option<&Price> {
-        self.prices.get(0)
+        self.prices.first()
     }
 
     /// Function gets the total quantity at the given `Price` and `Side` combination
@@ -149,7 +143,7 @@ mod test {
         assert!(bs.price_levels.contains_key(&price));
         assert_eq!(bs.get_total_qty(price), Some(qty));
         assert_eq!(bs.prices.len(), 1);
-        let best_price = bs.prices.get(0).unwrap();
+        let best_price = bs.prices.first().unwrap();
         assert_eq!(*best_price, price);
     }
 
@@ -318,7 +312,7 @@ mod test {
         assert_eq!(total_qty, qty * 2);
 
         // First item
-        let item = items.get(0).unwrap();
+        let item = items.first().unwrap();
         assert_eq!(item.qty, qty);
         assert!(!bs.map.contains_key(&id));
 

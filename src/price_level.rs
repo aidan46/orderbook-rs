@@ -69,11 +69,8 @@ impl PriceLevel {
 
     /// Function removes `Order` from `PriceLevel`
     pub(super) fn remove(&mut self, id: OrderId) {
-        match self.map.remove(&id) {
-            Some(order) => {
-                self.total_qty -= order.qty;
-            }
-            None => (),
+        if let Some(order) = self.map.remove(&id) {
+            self.total_qty -= order.qty;
         }
     }
 
@@ -161,7 +158,7 @@ mod test {
         // Assert
         assert_eq!(pl.total_qty, 2);
         assert_eq!(items.len(), 1);
-        let item = items.get(0).unwrap();
+        let item = items.first().unwrap();
         assert_eq!(item.qty, qty - 2);
         assert_eq!(total_qty, qty - 2);
     }
@@ -188,7 +185,7 @@ mod test {
         // Assert
         assert_eq!(pl.total_qty, 0);
         assert_eq!(items.len(), 1);
-        let item = items.get(0).unwrap();
+        let item = items.first().unwrap();
         assert_eq!(item.qty, qty);
         assert_eq!(total_qty, qty);
     }
@@ -229,7 +226,7 @@ mod test {
         assert_eq!(pl.queue.len(), 1);
 
         // First item
-        let item = items.get(0).unwrap();
+        let item = items.first().unwrap();
         assert_eq!(item.qty, qty);
         assert!(!pl.map.contains_key(&id));
 
@@ -278,7 +275,7 @@ mod test {
         assert!(pl.queue.is_empty());
 
         // First item
-        let item = items.get(0).unwrap();
+        let item = items.first().unwrap();
         assert_eq!(item.qty, qty);
         assert!(!pl.map.contains_key(&id));
 
@@ -324,7 +321,7 @@ mod test {
         assert!(pl.queue.is_empty());
 
         // First item
-        let item = items.get(0).unwrap();
+        let item = items.first().unwrap();
         assert_eq!(item.qty, qty);
         assert!(!pl.map.contains_key(&id));
 

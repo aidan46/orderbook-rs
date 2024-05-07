@@ -23,15 +23,12 @@ fn main() {
     assert!(total_qty.is_some());
     let total_qty = total_qty.unwrap();
     println!("Total quantity = {total_qty} at price: {best_price} on side {side:?}");
-    match ob.get_orders_till_qty(price, side, total_qty) {
-        Some((orders, drained_qty)) => {
-            println!(
-                "Got {} order(s) with total quantity of {drained_qty}",
-                orders.len()
-            );
-            println!("Orders drained: {orders:#?}");
-        }
-        None => (),
+    if let Some((orders, drained_qty)) = ob.get_orders_till_qty(price, side, total_qty) {
+        println!(
+            "Got {} order(s) with total quantity of {drained_qty}",
+            orders.len()
+        );
+        println!("Orders drained: {orders:#?}");
     }
 
     // Remove order

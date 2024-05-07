@@ -328,7 +328,7 @@ mod test {
         assert_eq!(total_qty, qty * 2);
 
         // First item
-        let item = orders.get(0).unwrap();
+        let item = orders.first().unwrap();
         assert_eq!(item.id, id);
         assert_eq!(item.price, price);
         assert_eq!(item.qty, qty);
