@@ -71,12 +71,14 @@ impl BookSide {
     ///
     /// Returns [`Err`] if the order with given `OrderId` is not present
     pub(super) fn remove(&mut self, id: OrderId) {
-        if let Some(order) = self.map.remove(&id) { if let Some(price_level) = self.price_levels.get_mut(&order.price) {
-            price_level.remove(id);
-            if price_level.get_total_qty() == 0 {
-                self.prices.retain(|&p| p != order.price);
+        if let Some(order) = self.map.remove(&id) {
+            if let Some(price_level) = self.price_levels.get_mut(&order.price) {
+                price_level.remove(id);
+                if price_level.get_total_qty() == 0 {
+                    self.prices.retain(|&p| p != order.price);
+                }
             }
-        } }
+        }
     }
 
     /// Function gets the best price for the given `Side`
