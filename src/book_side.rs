@@ -1,12 +1,10 @@
-use crate::{
-    OrderId, Price, Qty, {Order, PriceLevel},
-};
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    ops::Not,
-};
+use crate::{Order, OrderId, Price, PriceLevel, Qty};
+use serde::{Deserialize, Serialize};
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+use std::ops::Not;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 /// Ask or Bid
 pub enum Side {
     /// Ordered in ascending order

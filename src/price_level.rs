@@ -1,10 +1,9 @@
 #![allow(unused, clippy::unused_self)]
-use crate::{error::OrderBookError, Order, OrderId, Qty, Side};
-use std::{
-    cmp::Ordering,
-    collections::{BinaryHeap, HashMap, VecDeque},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use crate::error::OrderBookError;
+use crate::{Order, OrderId, Qty, Side};
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 type TimeStamp = u128; // SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
 
