@@ -52,8 +52,8 @@ impl BookSide {
                 new_price_lvl.insert(price_lvl);
                 self.prices.push(order.price);
                 match self.side {
-                    Side::Bid => self.prices.sort_by(Ord::cmp),
-                    Side::Ask => self.prices.sort_by(|a, b| b.cmp(a)),
+                    Side::Bid => self.prices.sort_by(|a, b| b.cmp(a)),
+                    Side::Ask => self.prices.sort_by(Ord::cmp),
                 }
             }
             Entry::Occupied(mut price_lvl) => {
@@ -168,6 +168,7 @@ mod test {
         // Act
         assert!(!bs.map.contains_key(&id));
         assert!(bs.prices.is_empty());
+        assert_eq!(bs.get_best_price(), None);
     }
 
     #[test]
@@ -202,7 +203,7 @@ mod test {
         let best_price = bs.get_best_price();
 
         // Assert
-        assert_eq!(best_price, Some(&o2.price));
+        assert_eq!(best_price, Some(&o1.price));
     }
 
     #[test]
@@ -237,7 +238,66 @@ mod test {
         let best_price = bs.get_best_price();
 
         // Assert
-        assert_eq!(best_price, Some(&o1.price));
+        assert_eq!(best_price, Some(&o2.price));
+    }
+
+    #[test]
+    fn get_best_price_ask_multiple_levels() {
+        // Setup
+        let side = Side::Ask;
+        let mut bs = BookSide::new(side);
+        let qty = 420;
+        // Inserted out of order so the sort has to do work
+        for (id, price) in [105, 103, 104].into_iter().enumerate() {
+            bs.insert(&Order {
+                price,
+                qty,
+                side,
+                id: id as OrderId + 1,
+            });
+        }
+
+        // Act
+        let best_price = bs.get_best_price();
+
+        // Assert
+        assert_eq!(bs.prices.len(), 3);
+        assert_eq!(best_price, Some(&103));
+    }
+
+    #[test]
+    fn get_best_price_bid_multiple_levels() {
+        // Setup
+        let side = Side::Bid;
+        let mut bs = BookSide::new(side);
+        let qty = 420;
+        // Inserted out of order so the sort has to do work
+        for (id, price) in [100, 102, 101].into_iter().enumerate() {
+            bs.insert(&Order {
+                price,
+                qty,
+                side,
+                id: id as OrderId + 1,
+            });
+        }
+
+        // Act
+        let best_price = bs.get_best_price();
+
+        // Assert
+        assert_eq!(bs.prices.len(), 3);
+        assert_eq!(best_price, Some(&102));
+    }
+
+    #[test]
+    fn get_best_price_empty() {
+        // Setup
+        let asks = BookSide::new(Side::Ask);
+        let bids = BookSide::new(Side::Bid);
+
+        // Assert
+        assert_eq!(asks.get_best_price(), None);
+        assert_eq!(bids.get_best_price(), None);
     }
 
     #[test]
