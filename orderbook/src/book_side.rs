@@ -28,6 +28,13 @@ pub(super) struct BookSide {
     price_levels: HashMap<Price, PriceLevel>,
     map: HashMap<OrderId, Order>,
     side: Side,
+    /// Occupied price levels, kept sorted best-first for `side`: descending for
+    /// [`Side::Bid`] so the highest bid is at the front, ascending for
+    /// [`Side::Ask`] so the lowest ask is at the front.
+    ///
+    /// `insert` establishes this ordering and `remove` preserves it; the whole
+    /// meaning of "best" lives in that pair, and `get_best_price` reads the
+    /// front element on the strength of it.
     prices: Vec<Price>,
 }
 
@@ -51,6 +58,7 @@ impl BookSide {
                 price_lvl.insert(order);
                 new_price_lvl.insert(price_lvl);
                 self.prices.push(order.price);
+                // Restores the best-first invariant on `self.prices`
                 match self.side {
                     Side::Bid => self.prices.sort_by(|a, b| b.cmp(a)),
                     Side::Ask => self.prices.sort_by(Ord::cmp),
@@ -80,6 +88,10 @@ impl BookSide {
     }
 
     /// Function gets the best price for the given `Side`
+    ///
+    /// Reads the front of `self.prices`, which is sorted best-first for
+    /// `self.side`: highest first for [`Side::Bid`], lowest first for
+    /// [`Side::Ask`]. See the invariant on the `prices` field.
     ///
     /// Returns [`None`] if there are no orders on given side
     pub(super) fn get_best_price(&self) -> Option<&Price> {
@@ -203,7 +215,8 @@ mod test {
         let best_price = bs.get_best_price();
 
         // Assert
-        assert_eq!(best_price, Some(&o1.price));
+        // Lowest ask is the best ask
+        assert_eq!(best_price, Some(&69));
     }
 
     #[test]
@@ -238,7 +251,8 @@ mod test {
         let best_price = bs.get_best_price();
 
         // Assert
-        assert_eq!(best_price, Some(&o2.price));
+        // Highest bid is the best bid
+        assert_eq!(best_price, Some(&70));
     }
 
     #[test]
@@ -287,6 +301,31 @@ mod test {
         // Assert
         assert_eq!(bs.prices.len(), 3);
         assert_eq!(best_price, Some(&102));
+    }
+
+    #[test]
+    fn get_best_price_after_level_removed() {
+        // Setup
+        let side = Side::Ask;
+        let mut bs = BookSide::new(side);
+        let qty = 420;
+        // One order per level, so removing an order drains its level
+        for (id, price) in [105, 103, 104].into_iter().enumerate() {
+            bs.insert(&Order {
+                price,
+                qty,
+                side,
+                id: id as OrderId + 1,
+            });
+        }
+        assert_eq!(bs.get_best_price(), Some(&103));
+
+        // Act: drain the best level
+        bs.remove(2);
+
+        // Assert: the next level up becomes the best ask
+        assert_eq!(bs.prices.len(), 2);
+        assert_eq!(bs.get_best_price(), Some(&104));
     }
 
     #[test]

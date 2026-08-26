@@ -252,7 +252,8 @@ mod test {
         let best_price = ob.get_best_price(side);
 
         // Assert
-        assert_eq!(best_price, Some(&o1.price));
+        // Lowest ask is the best ask
+        assert_eq!(best_price, Some(&69));
     }
 
     #[test]
@@ -288,7 +289,8 @@ mod test {
         let best_price = ob.get_best_price(side);
 
         // Assert
-        assert_eq!(best_price, Some(&o2.price));
+        // Highest bid is the best bid
+        assert_eq!(best_price, Some(&70));
     }
 
     #[test]
