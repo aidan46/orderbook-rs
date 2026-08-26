@@ -252,7 +252,8 @@ mod test {
         let best_price = ob.get_best_price(side);
 
         // Assert
-        assert_eq!(best_price, Some(&o2.price));
+        // Lowest ask is the best ask
+        assert_eq!(best_price, Some(&69));
     }
 
     #[test]
@@ -288,7 +289,64 @@ mod test {
         let best_price = ob.get_best_price(side);
 
         // Assert
-        assert_eq!(best_price, Some(&o1.price));
+        // Highest bid is the best bid
+        assert_eq!(best_price, Some(&70));
+    }
+
+    #[test]
+    fn get_best_price_multiple_levels_both_sides() {
+        // Setup
+        let mut ob = OrderBook::new();
+        let qty = 420;
+        let mut id = 1;
+        // Both sides inserted out of order so the sort has to do work
+        for (side, prices) in [(Side::Bid, [100, 102, 101]), (Side::Ask, [105, 103, 104])] {
+            for price in prices {
+                let res = ob.insert(Order {
+                    price,
+                    qty,
+                    side,
+                    id,
+                });
+                assert!(res.is_ok());
+                id += 1;
+            }
+        }
+
+        // Act
+        let best_bid = ob.get_best_price(Side::Bid);
+        let best_ask = ob.get_best_price(Side::Ask);
+
+        // Assert
+        assert_eq!(best_bid, Some(&102));
+        assert_eq!(best_ask, Some(&103));
+    }
+
+    #[test]
+    fn get_best_price_empty() {
+        // Setup
+        let ob = OrderBook::new();
+
+        // Assert
+        assert_eq!(ob.get_best_price(Side::Ask), None);
+        assert_eq!(ob.get_best_price(Side::Bid), None);
+    }
+
+    #[test]
+    fn get_best_price_empty_side_with_orders_on_the_other() {
+        // Setup
+        let mut ob = OrderBook::new();
+        let res = ob.insert(Order {
+            price: 69,
+            qty: 420,
+            side: Side::Bid,
+            id: 1,
+        });
+        assert!(res.is_ok());
+
+        // Assert
+        assert_eq!(ob.get_best_price(Side::Bid), Some(&69));
+        assert_eq!(ob.get_best_price(Side::Ask), None);
     }
 
     #[test]
