@@ -323,6 +323,72 @@ mod test {
     }
 
     #[test]
+    fn reinsert_after_level_emptied() {
+        // Setup
+        let side = Side::Ask;
+        let mut ob = OrderBook::new();
+        assert!(ob.insert(Order::new(100, 5, side, 1)).is_ok());
+        assert!(ob.remove(1).is_ok());
+
+        assert_eq!(ob.get_best_price(side), None);
+        assert_eq!(ob.get_total_qty(100, side), None);
+
+        // Act: refill the same price with a new order
+        assert!(ob.insert(Order::new(100, 3, side, 2)).is_ok());
+
+        // Assert: the price is visible to best-price queries again
+        assert_eq!(ob.get_best_price(side), Some(&100));
+        assert_eq!(ob.get_total_qty(100, side), Some(3));
+    }
+
+    #[test]
+    fn repeated_empty_refill_cycles_both_sides() {
+        // Setup
+        let mut ob = OrderBook::new();
+
+        // Act: three empty/refill cycles at the top of each side
+        for cycle in 0..3 {
+            let bid_id = (cycle * 2) + 1;
+            let ask_id = bid_id + 1;
+            assert!(ob.insert(Order::new(99, 5, Side::Bid, bid_id)).is_ok());
+            assert!(ob.insert(Order::new(101, 5, Side::Ask, ask_id)).is_ok());
+
+            assert_eq!(ob.get_best_price(Side::Bid), Some(&99));
+            assert_eq!(ob.get_best_price(Side::Ask), Some(&101));
+
+            assert!(ob.remove(bid_id).is_ok());
+            assert!(ob.remove(ask_id).is_ok());
+
+            assert_eq!(ob.get_best_price(Side::Bid), None);
+            assert_eq!(ob.get_best_price(Side::Ask), None);
+            assert_eq!(ob.get_total_qty(99, Side::Bid), None);
+            assert_eq!(ob.get_total_qty(101, Side::Ask), None);
+        }
+    }
+
+    #[test]
+    fn reinsert_after_level_drained_by_qty() {
+        // Setup
+        let side = Side::Bid;
+        let mut ob = OrderBook::new();
+        assert!(ob.insert(Order::new(100, 5, side, 1)).is_ok());
+
+        // Act: drain the level through the matching path
+        assert!(ob.get_orders_till_qty(100, side, 5).is_some());
+
+        // Assert: a fully matched level stops being reported as the top of book
+        assert_eq!(ob.get_best_price(side), None);
+        assert_eq!(ob.get_total_qty(100, side), None);
+
+        // Act: refill the same price
+        assert!(ob.insert(Order::new(100, 2, side, 2)).is_ok());
+
+        // Assert
+        assert_eq!(ob.get_best_price(side), Some(&100));
+        assert_eq!(ob.get_total_qty(100, side), Some(2));
+    }
+
+    #[test]
     fn get_best_price_empty() {
         // Setup
         let ob = OrderBook::new();
